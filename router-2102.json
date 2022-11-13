@@ -23,6 +23,19 @@
 		"ext": "-upgrade.bin",
 		"addons": ["readme.pdf", "glinet.txt"]
 	},
+		"R619AC": {
+		"details": "P2W R619AC",
+		"type": "2",
+		"build": "1907",
+		"config": ".config_r619ac",
+		"image1": "openwrt-ipq40xx-generic-p2w_r619ac-squashfs-nand-factory.ubi",
+		"image2": "openwrt-ipq40xx-generic-p2w_r619ac-squashfs-nand-sysupgrade.bin",
+		"imagepath": "/ipq40xx/generic/",
+		"mod": "P2W-R619AC",
+		"ext1": "-factory.ubi",
+		"ext2": "-upgrade.bin",
+		"addons": ["readme.pdf", "readmerecovery.txt"]
+	},
 	"H721": {
 		"details": "DualQ H721",
 		"type": "1",
