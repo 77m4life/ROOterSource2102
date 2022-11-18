@@ -26,7 +26,7 @@
 		"R619AC": {
 		"details": "P2W R619AC",
 		"type": "2",
-		"build": "1907",
+		"build": "2102",
 		"config": ".config_r619ac",
 		"image1": "openwrt-ipq40xx-generic-p2w_r619ac-squashfs-nand-factory.ubi",
 		"image2": "openwrt-ipq40xx-generic-p2w_r619ac-squashfs-nand-sysupgrade.bin",
