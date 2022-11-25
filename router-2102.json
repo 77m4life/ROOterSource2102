@@ -23,7 +23,7 @@
 		"ext": "-upgrade.bin",
 		"addons": ["readme.pdf", "glinet.txt"]
 	},
-		"R619AC": {
+	"R619AC": {
 		"details": "P2W R619AC",
 		"type": "2",
 		"build": "2102",
