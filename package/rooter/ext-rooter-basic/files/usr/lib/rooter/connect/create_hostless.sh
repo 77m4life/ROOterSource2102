@@ -261,6 +261,12 @@ elif [ $idV = 12d1 -a $idP = 15c1 ]; then
 elif [ $idV = 2cd2 ]; then
 	log "MikroTik R11e ECM"
 	SP=7
+elif [ $idV = 0e8d -a $idP = 7127  ]; then
+	log "RM350 ECM"
+	SP=8
+elif [ $idV = 0e8d -a $idP = 7126  ]; then
+	log "RM350 ECM"
+	SP=9
 else
 	SP=0
 fi
@@ -279,6 +285,10 @@ if [ $SP -gt 0 ]; then
 		PORTN=2
 	elif [ $SP -eq 7 ]; then
 		PORTN=0
+	elif [ $SP -eq 8 ]; then
+		PORTN=3
+	elif [ $SP -eq 9 ]; then
+		PORTN=1
 	else
 		PORTN=1
 	fi
@@ -341,10 +351,10 @@ if [ $SP -gt 0 ]; then
 			log "Cell Lock $OX"
 			sleep 10
 		fi
+		$ROOTER/connect/bandmask $CURRMODEM 1
+		uci commit modem
 	fi
 
-	$ROOTER/connect/bandmask $CURRMODEM 1
-	uci commit modem
 
 	if [ $SP = 4 ]; then
 		if [ -e /etc/interwave ]; then
@@ -361,18 +371,25 @@ if [ $SP -gt 0 ]; then
 		uci commit modem
 	fi
 fi
-$ROOTER/common/gettype.sh $CURRMODEM
-$ROOTER/connect/get_profile.sh $CURRMODEM
-if [ -e $ROOTER/simlock.sh ]; then
-	$ROOTER/simlock.sh $CURRMODEM
+	
+if [ -e $ROOTER/modem-led.sh ]; then
+	$ROOTER/modem-led.sh $CURRMODEM 2
 fi
 
-if [ -e /tmp/simpin$CURRMODEM ]; then
-	log " SIM Error"
-	exit 0
-fi
-if [ -e /usr/lib/gps/gps.sh ]; then
-	/usr/lib/gps/gps.sh $CURRMODEM &
+$ROOTER/common/gettype.sh $CURRMODEM
+$ROOTER/connect/get_profile.sh $CURRMODEM
+if [ $SP -gt 0 ]; then
+	if [ -e $ROOTER/simlock.sh ]; then
+		$ROOTER/simlock.sh $CURRMODEM
+	fi
+
+	if [ -e /tmp/simpin$CURRMODEM ]; then
+		log " SIM Error"
+		#exit 0
+	fi
+	if [ -e /usr/lib/gps/gps.sh ]; then
+		/usr/lib/gps/gps.sh $CURRMODEM &
+	fi
 fi
 
 INTER=$(uci -q get modem.modeminfo$CURRMODEM.inter)
@@ -471,6 +488,31 @@ if [ $SP -eq 4 ]; then
 			get_ip
 		fi
 	done
+fi
+	
+if [ $SP = 8 -o  $SP = 9 ]; then
+	log "FM350 Connection Command"
+	$ROOTER/connect/bandmask $CURRMODEM 2
+	uci commit modem
+	get_connect
+	export SETAPN=$NAPN
+	BRK=1
+	
+	OX=$($ROOTER/gcom/gcom-locked "/dev/ttyUSB$CPORT" "connect-fecm.gcom" "$CURRMODEM")
+		chcklog "$OX"
+		log " "
+		log "Fibocom Connect : $OX"
+		log " "
+		ERROR="ERROR"
+		if `echo ${OX} | grep "${ERROR}" 1>/dev/null 2>&1`
+		then
+			$ROOTER/signal/status.sh $CURRMODEM "$MAN $MOD" "Failed to Connect : Retrying"
+			log "Failed to Connect"
+		else
+			BRK=0
+			get_ip
+			check_ip
+		fi
 fi
 
 if [ $SP = 5 ]; then
@@ -588,6 +630,10 @@ fi
 uci set modem.modem$CURRMODEM.ip=$wan_ip
 uci commit modem
 
+if [ -e $ROOTER/modem-led.sh ]; then
+	$ROOTER/modem-led.sh $CURRMODEM 3
+fi
+		
 $ROOTER/log/logger "HostlessModem #$CURRMODEM Connected with IP $wan_ip"
 
 PROT=5
@@ -651,7 +697,8 @@ if [ $SP -gt 0 ]; then
 	fi
 fi
 
-CLB=$(uci -q get modem.modeminfo$CURRMODEM.lb)
+#CLB=$(uci -q get modem.modeminfo$CURRMODEM.lb)
+CLB=1
 if [ -e /etc/config/mwan3 ]; then
 	ENB=$(uci -q get mwan3.wan$INTER.enabled)
 	if [ ! -z "$ENB" ]; then

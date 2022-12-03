@@ -303,6 +303,10 @@ chkraw() {
 		RAW=1
 	elif [ $idV = 413c -a $idP = 81d7 ]; then
 		RAW=1
+	elif [ $idV = 413c -a $idP = 81e0 ]; then
+		RAW=1
+	elif [ $idV = 12d1 -a $idP = 1506 ]; then
+		RAW=1
 	fi
 }
 
@@ -1058,6 +1062,8 @@ do
 				ifup wan$INTER
 				[ -f /tmp/ipv6supp$INTER ] && addv6
 			else
+				#log "Restart Modem"
+				#/usr/lib/rooter/luci/restart.sh $CURRMODEM
 				exit 0
 			fi
 			;;
@@ -1345,6 +1351,7 @@ esac
 	fi
 
 	CLB=$(uci -q get modem.modeminfo$CURRMODEM.lb)
+	CLB=1
 	if [ -e /etc/config/mwan3 ]; then
 		ENB=$(uci -q get mwan3.wan$INTER.enabled)
 		if [ ! -z "$ENB" ]; then

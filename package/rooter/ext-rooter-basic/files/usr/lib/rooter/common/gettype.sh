@@ -2,6 +2,10 @@
 
 ROOTER=/usr/lib/rooter
 
+log() {
+	modlog "Get ICCID $CURRMODEM" "$@"
+}
+
 echo "0" > /tmp/block
 
 decode_crsm() {
@@ -193,27 +197,52 @@ fi
 echo "$IMSI" >> /tmp/msimdatax$CURRMODEM
 uci set modem.modem$CURRMODEM.imsi=$IMSI
 
-ATCMDD="AT+CRSM=176,12258,0,0,10"
-OX=$($ROOTER/gcom/gcom-locked "/dev/ttyUSB$CPORT" "run-at.gcom" "$CURRMODEM" "$ATCMDD")
-OX=$($ROOTER/common/processat.sh "$OX")
-ERROR="ERROR"
-if `echo ${OX} | grep "${ERROR}" 1>/dev/null 2>&1`
-then
-	ICCID="Unknown"
-else
-	ICCID=$(echo "$OX" | awk -F[,\ ] '/^\+CRSM:/ {print $4}')
-	if [ "x$ICCID" != "x" ]; then
-		sstring=$(echo "$ICCID" | sed -e 's/"//g')
-		length=${#sstring}
-		xstring=""
-		decode_crsm
-		ICCID=$xstring
-	else
+idV=$(uci -q get modem.modem$CURRMODEM.idV)
+idP=$(uci -q get modem.modem$CURRMODEM.idP)
+if [ $idV = 0e8d ]; then
+	ATCMDD="AT+CCID"
+	OX=$($ROOTER/gcom/gcom-locked "/dev/ttyUSB$CPORT" "run-at.gcom" "$CURRMODEM" "$ATCMDD")
+	OX=$($ROOTER/common/processat.sh "$OX")
+	ERROR="ERROR"
+	if `echo ${OX} | grep "${ERROR}" 1>/dev/null 2>&1`
+	then
 		ICCID="Unknown"
+	else
+		ICCID=$(echo "$OX" | awk -F[,\ ] '/^\+CCID:/ {print $2}')
+		if [ "x$ICCID" != "x" ]; then
+			sstring=$(echo "$ICCID" | sed -e 's/"//g')
+			ICCID=$sstring
+		else
+			ICCID="Unknown"
+		fi
+	fi
+else
+	ATCMDD="AT+CRSM=176,12258,0,0,10"
+	OX=$($ROOTER/gcom/gcom-locked "/dev/ttyUSB$CPORT" "run-at.gcom" "$CURRMODEM" "$ATCMDD")
+	OX=$($ROOTER/common/processat.sh "$OX")
+	ERROR="ERROR"
+	if `echo ${OX} | grep "${ERROR}" 1>/dev/null 2>&1`
+	then
+		ICCID="Unknown"
+	else
+		ICCID=$(echo "$OX" | awk -F[,\ ] '/^\+CRSM:/ {print $4}')
+		if [ "x$ICCID" != "x" ]; then
+			sstring=$(echo "$ICCID" | sed -e 's/"//g')
+			length=${#sstring}
+			xstring=""
+			decode_crsm
+			ICCID=$xstring
+		else
+			ICCID="Unknown"
+		fi
 	fi
 fi
 uci set modem.modem$CURRMODEM.iccid=$ICCID
 uci commit modem
+if [ -e /etc/config/modeinfo ]; then
+	uci set modeinfo.global.iccid$CURRMODEM=$ICCID
+	uci commit modeinfo
+fi
 echo "$ICCID" >> /tmp/msimdatax$CURRMODEM
 echo "0" >> /tmp/msimdatax$CURRMODEM
 echo "$CNUM" > /tmp/msimnumx$CURRMODEM
