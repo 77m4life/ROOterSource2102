@@ -1,0 +1,10 @@
+Account Type: Organization
+Business name: My Business
+Name: John Doe
+Address line 1: 123 Main St
+Address line 2: Apt 4
+District: District 9
+City: HCMC
+Province: HCMC
+Postal code: 700000
+Primary contact: John
